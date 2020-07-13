@@ -17,7 +17,7 @@
 class Popup {
   public:
 	/// Constructor
-	Popup(std::string msg, Color c, double speed, SvgTxtThemeSimple* popupText, std::string info = "", SvgTxtTheme* infoText = nullptr):
+	Popup(std::string msg, Color c, double speed, std::shared_ptr<SvgTxtThemeSimple> popupText, std::string info = "", std::shared_ptr<SvgTxtTheme> infoText = nullptr):
 	  m_msg(msg), m_color(c), m_anim(AnimValue(0.0, speed)), m_popupText(popupText), m_info(info), m_infoText(infoText)
 	{
 		m_anim.setTarget(1.0, false);
@@ -38,7 +38,8 @@ class Popup {
 			m_popupText->draw();
 		}
 		if (m_info != "" && m_infoText) {
-			m_infoText->dimensions.screenBottom(-0.02f).middle(-0.12f);
+			m_infoText->dimensions().screenBottom(-0.02f).middle(-0.12f);
+			m_infoText->layout(m_info);
 			m_infoText->draw(m_info);
 		}
 		if (anim > 0.999) m_anim.setTarget(0.0, true);
@@ -48,9 +49,9 @@ class Popup {
 	std::string m_msg;  /// Popup text
 	Color m_color;  /// Color
 	AnimValue m_anim;  /// Animation timer
-	SvgTxtThemeSimple* m_popupText;  /// Font for popup
+	std::shared_ptr<SvgTxtThemeSimple> m_popupText;  /// Font for popup
 	std::string m_info;  /// Text to show in the bottom
-	SvgTxtTheme* m_infoText;  /// Font for the additional text
+	std::shared_ptr<SvgTxtTheme> m_infoText;  /// Font for the additional text
 };
 
 
@@ -135,8 +136,8 @@ public:
 	Texture m_arrow_down;
 	Texture m_arrow_left;
 	Texture m_arrow_right;
-	SvgTxtTheme m_text;
-	std::unique_ptr<SvgTxtThemeSimple> m_popupText;
+	std::shared_ptr<SvgTxtTheme> m_text;
+	std::shared_ptr<SvgTxtThemeSimple> m_popupText;
 	std::unique_ptr<ThemeInstrumentMenu> m_menuTheme;
 
 	// Dynamic stuff for join menu

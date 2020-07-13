@@ -62,6 +62,14 @@ class Dimensions {
 		}
 		throw std::logic_error("Unknown value in Dimensions::m_xAnchor");
 	}
+	std::string getXAnchor() const {
+		switch (m_xAnchor) {
+		  case LEFT: return "LEFT";
+		  case MIDDLE: return "MIDDLE";
+		  case RIGHT: return "RIGHT";
+		}
+		throw std::logic_error("Unknown value in Dimensions::m_xAnchor");		
+	}
 	/// returns top
 	float y1() const {
 		switch (m_yAnchor) {
@@ -187,11 +195,11 @@ public:
 	Dimensions dimensions;
 	/// texture coordinates
 	TexCoords tex;
-	Texture(): m_width(0), m_height(0), m_premultiplied(true) {}
+	Texture(): m_width(0.0f), m_height(0.0f), m_premultiplied(true) {}
 	/// creates texture from file
 	Texture(fs::path const& filename);
 	~Texture();
-	bool empty() const { return m_width * m_height == 0; } ///< Test if the loading has failed
+	bool empty() const { return m_width * m_height == 0.0f; } ///< Test if the loading has failed
 	/// draws texture
 	void draw() const;
 	using OpenGLTexture<GL_TEXTURE_2D>::draw;

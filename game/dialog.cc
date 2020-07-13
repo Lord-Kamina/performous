@@ -3,7 +3,7 @@
 Dialog::Dialog(std::string const& text) :
 	m_text(text),
 	m_dialog(findFile("warning.svg")),
-	m_svgText(findFile("dialog_txt.svg"), config["graphic/text_lod"].f(), WrappingStyle().menuScreenText())
+	m_svgText(std::make_shared<SvgTxtTheme>(findFile("dialog_txt.svg"), config["graphic/text_lod"].f(), WrappingStyle().menuScreenText()))
 	{
 		m_dialog.dimensions.screenTop(-0.1f);
 		m_animationVal.setValue(1);
@@ -31,10 +31,9 @@ void Dialog::draw() {
 			verticaloffset = 1.0 - 1.0 * m_animationVal.get();
 		break;
 	}
-
-
 	m_dialog.dimensions.fixedHeight(0.15f).right(0.5f).screenTop(-0.10f + 0.11f - verticaloffset);
 	m_dialog.draw();
-	m_svgText.dimensions.right(0.35f).screenTop(0.08f - 0.10f + 0.11f - verticaloffset);
-	m_svgText.draw(m_text);
+	m_svgText->dimensions().right(0.35f).screenTop(0.08f - 0.10f + 0.11f - verticaloffset);
+	m_svgText->layout(m_text);
+	m_svgText->draw();
 }

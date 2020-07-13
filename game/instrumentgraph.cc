@@ -22,7 +22,7 @@ InstrumentGraph::InstrumentGraph(Audio& audio, Song const& song, input::DevicePt
   m_arrow_down(findFile("arrow_button_down.svg")),
   m_arrow_left(findFile("arrow_button_left.svg")),
   m_arrow_right(findFile("arrow_button_right.svg")),
-  m_text(findFile("sing_timetxt.svg"), config["graphic/text_lod"].f(), WrappingStyle().lyrics()),
+  m_text(std::make_shared<SvgTxtTheme>(findFile("sing_timetxt.svg"), config["graphic/text_lod"].f(), WrappingStyle().lyrics())),
   m_selectedTrack(""),
   m_selectedDifficulty(0),
   m_rejoin(false),
@@ -42,7 +42,7 @@ InstrumentGraph::InstrumentGraph(Audio& audio, Song const& song, input::DevicePt
 	double time = m_audio.getPosition();
 	m_jointime = time < 0.0 ? -1.0 : time + join_delay;
 
-	m_popupText = std::make_unique<SvgTxtThemeSimple>(findFile("sing_popup_text.svg"), config["graphic/text_lod"].f(), WrappingStyle().lyrics());
+	m_popupText = std::make_shared<SvgTxtThemeSimple>(findFile("sing_popup_text.svg"), config["graphic/text_lod"].f(), WrappingStyle().lyrics());
 	m_menuTheme = std::make_unique<ThemeInstrumentMenu>();
 	for (auto& elem: m_pressed) elem = false;
 }
@@ -53,10 +53,17 @@ bool InstrumentGraph::dead() const { return m_jointime != m_jointime || m_dead >
 
 void InstrumentGraph::setupPauseMenu() {
 	m_menu.clear();
-	m_menu.add(MenuOption(_("Resume"), _("Back to performing!")));
-	m_menu.add(MenuOption(_("Rejoin"), _("Change selections")).changer(m_rejoin));
-	m_menu.add(MenuOption(_("Restart"), _("Start the song\nfrom the beginning")).screen("Sing"));
-	m_menu.add(MenuOption(_("Quit"), _("Exit to song browser")).screen("Songs"));
+	auto _resume = std::make_unique<MenuOption>(_("Resume"), _("Back to performing!"));
+	m_menu.add(std::move(_resume));
+	auto _rejoin = std::make_unique<MenuOption>(_("Rejoin"), _("Change selections"));
+	_rejoin->changer(m_rejoin);
+	m_menu.add(std::move(_rejoin));
+	auto _restart = std::make_unique<MenuOption>(_("Restart"), _("Start the song\nfrom the beginning"));
+	_restart->screen("Sing");
+	m_menu.add(std::move(_restart));
+	auto _quit = std::make_unique<MenuOption>(_("Quit"), _("Exit to song browser"));
+	_quit->screen("Songs");
+	m_menu.add(std::move(_quit));
 }
 
 
@@ -90,13 +97,13 @@ void InstrumentGraph::drawMenu() {
 	m_arrow_down.dimensions.stretch(0.05f, 0.05f);
 	m_arrow_left.dimensions.stretch(0.05f, 0.05f);
 	m_arrow_right.dimensions.stretch(0.05f, 0.05f);
-	const auto cur = &m_menu.current();
+	MenuOption& cur = m_menu.current();
 	float w = m_menu.dimensions.w();
 	const float s = std::min(m_width.get(), 0.5) / w;
 	Transform trans(glmath::scale(s));  // Fit better menu on screen
 	// We need to multiply offset by inverse scale factor to keep it always constant
 	// All these vars are ultimately affected by the scaling matrix
-	const float txth = th.option_selected.h();
+	const float txth = th.option_selected->h();
 	const float button_margin = m_arrow_up.dimensions.w()
 		* (isKeyboard() && getGraphType() != input::DEVTYPE_DANCEPAD ? 2.0f : 1.0f);
 	const float step = txth * 0.7f;
@@ -111,12 +118,10 @@ void InstrumentGraph::drawMenu() {
 	w = 0;
 	unsigned i = 0;
 	for (MenuOptions::const_iterator it = m_menu.begin(); it != m_menu.end(); ++it, ++i) {
-		std::string menutext = it->getName();
-		SvgTxtTheme* txt = &th.option_selected; // Default: font for selected menu item
-
-		if (cur != &*it) { // Unselected menuoption
-			txt = &(th.getCachedOption(menutext));
-
+		std::string menutext = (*it)->getName();
+		std::shared_ptr<SvgTxtTheme> txt = th.option_selected; // Default: font for selected menu item
+		if (&cur != &*it->get()) { // Unselected menuoption
+			txt = th.getCachedOption(menutext);
 		// Selected item
 		} else {
 			// Left/right Icons
@@ -149,43 +154,49 @@ void InstrumentGraph::drawMenu() {
 				float rightx = xx + button_margin*0.25f;
 				{
 					std::string hintletter = (getGraphType() == input::DEVTYPE_GUITAR ? (m_leftymode.b() ? "Z" : "1") : "U");
-					SvgTxtTheme& hintfont = th.getCachedOption(hintletter);
-					hintfont.dimensions.left(leftx).center(y);
-					hintfont.draw(hintletter);
+					std::shared_ptr<SvgTxtTheme> hintfont = th.getCachedOption(hintletter);
+					hintfont->dimensions().left(leftx).center(y);
+					hintfont->layout(hintletter);
+					hintfont->draw();
 				}{
 					std::string hintletter = (getGraphType() == input::DEVTYPE_GUITAR ? (m_leftymode.b() ? "X" : "2") : "P");
-					SvgTxtTheme& hintfont = th.getCachedOption(hintletter);
-					hintfont.dimensions.right(rightx).center(y);
-					hintfont.draw(hintletter);
+					std::shared_ptr<SvgTxtTheme> hintfont = th.getCachedOption(hintletter);
+					hintfont->dimensions().right(rightx).center(y);
+					hintfont->layout(hintletter);
+					hintfont->draw();
 				}
 				// Only drums has up/down
 				if (getGraphType() == input::DEVTYPE_DRUMS) {
 					if (i > 0) {  // Up
-						SvgTxtTheme& hintfont = th.getCachedOption("I");
-						hintfont.dimensions.left(leftx).center(y - step);
-						hintfont.draw("I");
+						std::shared_ptr<SvgTxtTheme> hintfont = th.getCachedOption("I");
+						hintfont->dimensions().left(leftx).center(y - step);
+						hintfont->layout("I");
+						hintfont->draw();
 					}
 					if (i < m_menu.getOptions().size()-1) {  // Down
-						SvgTxtTheme& hintfont = th.getCachedOption("O");
-						hintfont.dimensions.left(leftx).center(y + step);
-						hintfont.draw("O");
+						std::shared_ptr<SvgTxtTheme> hintfont = th.getCachedOption("O");
+						hintfont->dimensions().left(leftx).center(y + step);
+						hintfont->layout("O");
+						hintfont->draw();
 					}
 				}
 			}
 		}
 		// Finally we are at the actual menu item text drawing
-		ColorTrans c(Color::alpha(it->isActive() ? 1.0f : 0.5f));
-		txt->dimensions.middle(x).center(y);
-		txt->draw(menutext);
+		ColorTrans c(Color::alpha((*it)->isActive() ? 1.0f : 0.5f));
+		txt->dimensions().middle(x).center(y);
+		txt->layout(menutext);
+		txt->draw();
 		w = std::max(w, txt->w() + 2 * step + button_margin * 2); // Calculate the widest entry
 		y += step; // Move draw position down for the next option
 	}
 	// Draw comment text
-	if (cur->getComment() != "") {
+	if (cur.getComment() != "") {
 		//th.comment_bg.dimensions.middle().screenBottom(-0.2);
 		//th.comment_bg.draw();
-		th.comment.dimensions.middle().screenBottom(-0.12f);
-		th.comment.draw(cur->getComment());
+		th.comment->dimensions().middle().screenBottom(-0.12f);
+		th.comment->layout(cur.getComment());
+		th.comment->draw();
 	}
 	// Save the calculated menu dimensions
 	m_menu.dimensions.stretch(w, h);
@@ -204,7 +215,7 @@ void InstrumentGraph::handleCountdown(double time, double beginTime) {
 	if (!dead() && time < beginTime && time >= beginTime - m_countdown - 1) {
 		m_popups.push_back(Popup(m_countdown > 0 ?
 		  std::string("- ") +std::to_string(unsigned(m_countdown))+" -" : "Rock On!",
-		  Color(0.0f, 0.0f, 1.0f), 2.0f, m_popupText.get()));
+		  Color(0.0f, 0.0f, 1.0f), 2.0f, m_popupText));
 		  --m_countdown;
 	}
 }

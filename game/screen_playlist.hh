@@ -55,7 +55,7 @@ private:
 	std::unique_ptr<ThemeInstrumentMenu> m_menuTheme;
 	std::unique_ptr<ThemePlaylistScreen> theme;
 	std::unique_ptr<Texture> m_background;
-	SvgTxtTheme& getTextObject(std::string const& txt);
+	std::shared_ptr<SvgTxtTheme> getTextObject(std::string const& txt);
 	AnimValue m_nextTimer;
 	void draw_menu_options();
 	bool keyPressed;

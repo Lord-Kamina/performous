@@ -32,21 +32,23 @@ class LyricRow {
 		return time > lastTime;
 	}
 	/// draw/print lyrics
-	void draw(SvgTxtTheme& txt, double time, Dimensions &dim) const {
+	void draw(std::shared_ptr<SvgTxtTheme> txt, double time, Dimensions &dim) const {
 		std::vector<TZoomText> sentence;
 		for (Iterator it = m_begin; it != m_end; ++it) {
 			sentence.push_back(TZoomText(it->syllable));
 			if(!config["game/Textstyle"].i()) {
 			bool current = (time >= it->begin && time < it->end);
 			sentence.back().factor = current ? 1.1 - 0.1 * (time - it->begin) / (it->end - it->begin) : 1.0; // Zoom-in and out while it's the current syllable.
+// 			std::clog << "song/debug: syllable " << it->syllable << ", begin: " << std::to_string(it->begin) << ", time: " << std::to_string(time) << ", end: " << std::to_string(it->end) << ", current? " << std::to_string(current) << ", factor: " << sentence.back().factor << std::endl;
 			} else {
 			bool current = time >=it->begin;
 			sentence.back().factor = current ? std::min(1.0 + (0.15 * (time - it->begin) / (it->end - it->begin)), 1.1) : 1.0; // Zoom-in and out syllable proportionally to their length.
+// std::clog << "song/debug: syllable " << it->syllable << ", begin: " << std::to_string(it->begin) << ", time: " << std::to_string(time) << ", end: " << std::to_string(it->end) << ", current? " << std::to_string(current) << ", factor: " << sentence.back().factor << std::endl;
 			}
 		}
 		ColorTrans c(Color::alpha(fade.get()));
-		txt.dimensions = dim;
-		txt.draw(sentence, true);
+		txt->dimensions() = dim;
+		txt->layout(sentence, true);
 	}
 
   private:
@@ -70,8 +72,8 @@ class LayoutSinger {
 	Notes::const_iterator m_lyricit;
 	std::deque<LyricRow> m_lyrics;
 	std::unique_ptr<Texture> m_player_icon;
-	std::unique_ptr<SvgTxtThemeSimple> m_score_text[4];
-	std::unique_ptr<SvgTxtThemeSimple> m_line_rank_text[4];
+	std::shared_ptr<SvgTxtThemeSimple> m_score_text[4];
+	std::shared_ptr<SvgTxtThemeSimple> m_line_rank_text[4];
 	Database& m_database;
 	std::shared_ptr<ThemeSing> m_theme;
 	AnimValue m_feedbackFader;

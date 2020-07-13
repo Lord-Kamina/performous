@@ -4,7 +4,10 @@
 #include "texture.hh"
 #include "unicode.hh"
 #include <pango/pangocairo.h>
+#include <memory>
 #include <vector>
+
+class SvgTxtThemeBase;
 
 /// horizontal align
 enum class Align {A_ASIS, LEFT, CENTER, RIGHT};
@@ -39,19 +42,47 @@ struct TextStyle {
 		if (UnicodeUtil::toLower(stroke_linecap) == "square") return CAIRO_LINE_CAP_SQUARE;	
 		return CAIRO_LINE_CAP_BUTT;
 	};
+	PangoAlignment parseAlignment() {
+		if (fontalign == "start") return PANGO_ALIGN_LEFT;
+		if (fontalign == "center" || fontalign == "middle") return PANGO_ALIGN_CENTER;
+		if (fontalign == "end") return PANGO_ALIGN_RIGHT;
+		throw std::logic_error(fontalign + ": Unknown font alignment (opengl_text.hh)");
+	};
+	PangoStyle parseStyle() {
+		if (fontstyle == "normal") return PANGO_STYLE_NORMAL;
+		if (fontstyle == "italic") return PANGO_STYLE_ITALIC;
+		if (fontstyle == "oblique") return PANGO_STYLE_OBLIQUE;
+		throw std::logic_error(fontstyle + ": Unknown font style (opengl_text.hh)");
+	};
+	PangoWeight parseWeight() {
+		if (fontweight == "normal") return PANGO_WEIGHT_NORMAL;
+		if (fontweight == "bold") return PANGO_WEIGHT_BOLD;
+		if (fontweight == "bolder") return PANGO_WEIGHT_ULTRABOLD;
+		throw std::logic_error(fontweight + ": Unknown font weight (opengl_text.hh)");
+	};
 	Color fill_col; ///< fill color
 	Color stroke_col; ///< stroke color
 	float stroke_width; ///< stroke thickness
 	float stroke_miterlimit; ///< stroke miter limit
 	float fontsize; ///< fontsize
+	float linespacing; ///< line spacing
 	std::string fontfamily; ///< fontfamily
 	std::string fontstyle; ///< fontstyle
 	std::string fontweight; ///< fontweight
 	std::string fontalign; ///< alignment
-	std::string	stroke_linejoin; ///< stroke line-join type
-	std::string	stroke_linecap; ///< stroke line-join type
+	std::string stroke_linejoin; ///< stroke line-join type
+	std::string stroke_linecap; ///< stroke line-join type
 	std::string text; ///< text
-	TextStyle(): stroke_width(), stroke_miterlimit(1.0f), fontsize() {}
+	std::unique_ptr<PangoFontDescription, decltype(&pango_font_description_free)> fontDesc;
+	TextStyle(): stroke_width(),
+		stroke_miterlimit(1.0f),
+		fontsize(),
+		fontDesc(std::unique_ptr<PangoFontDescription, decltype(&pango_font_description_free)>(
+		    pango_font_description_new(),
+		    &pango_font_description_free)) {
+		std::clog << "textstyle/debug: Constructed new instance." << std::endl;
+		std::clog << "pango1/debug: Creating new instance of PangoFontDescription" << std::endl;
+	}
 };
 	
 /// Convenience container for deciding how a given OpenGLText instance will be wrapped, ellipsized or fitted to the display area.
@@ -59,18 +90,18 @@ struct WrappingStyle {
 	enum class EllipsizeMode { NONE, START, MIDDLE, END };
 
 	/// constructor
-	WrappingStyle(unsigned short int _maxWidth = 0, EllipsizeMode _ellipsize = EllipsizeMode::NONE, unsigned short int _maxLines = 1);
+	WrappingStyle(float _maxWidth = 0.0f, EllipsizeMode _ellipsize = EllipsizeMode::NONE, unsigned short int _maxLines = 1);
 	
 	/// setters
 	WrappingStyle& ellipsizeNone(unsigned short int lines = 1) { m_maxLines = (lines * -1); m_ellipsize = EllipsizeMode::NONE; return *this; }
 	WrappingStyle& ellipsizeStart(unsigned short int lines = 1) { m_maxLines = (lines * -1); m_ellipsize = EllipsizeMode::START; return *this; }
 	WrappingStyle& ellipsizeMiddle(unsigned short int lines = 1) { m_maxLines = (lines * -1); m_ellipsize = EllipsizeMode::MIDDLE; return *this; }
 	WrappingStyle& ellipsizeEnd(unsigned short int lines = 1) { m_maxLines = (lines * -1); m_ellipsize = EllipsizeMode::END; return *this; }
-	WrappingStyle& setWidth(unsigned short int width = 0) { m_maxWidth = (width > 96 ? 0 : width); return *this; }
+	WrappingStyle& setWidth(float _maxWidth = 0.0f) { m_maxWidth = (_maxWidth > 96.0f || std::signbit(_maxWidth)) ? 0.0f : _maxWidth; return *this; }
 	
 	/// presets
-	WrappingStyle& menuScreenText(unsigned short int lines = 0) { setWidth(96); ellipsizeMiddle(lines); return *this;  } ///< No line limit, wrap at screen edge and/or ellipsize middle.
-	WrappingStyle& lyrics() { ellipsizeNone(1); setWidth(96); return *this;  } ///< Default one line, wrap at screen edge, don't ellipsize or wrap.
+	WrappingStyle& menuScreenText(unsigned short int lines = 0) { setWidth(96.0f); ellipsizeMiddle(lines); return *this;  } ///< No line limit, wrap at screen edge and/or ellipsize middle.
+	WrappingStyle& lyrics() { ellipsizeNone(1); setWidth(96.0f); return *this;  } ///< Default one line, wrap at screen edge, don't ellipsize or wrap.
 	
 	/** maximum lines.
 	  * This is an int because Pango is a mess.
@@ -97,7 +128,7 @@ struct WrappingStyle {
 class OpenGLText {
 public:
 	/// constructor
-	OpenGLText(TextStyle &_text, float m, WrappingStyle const& wrapping, Align textureAlign);
+	OpenGLText(std::shared_ptr<SvgTxtThemeBase> _owner);
 	/// draws area
 	void draw(Dimensions &_dim, TexCoords &_tex);
 	/// draws full texture
@@ -110,6 +141,8 @@ public:
 	Dimensions& dimensions() { return m_texture.dimensions; }
 	/// @return number of lines rendered.
 	size_t lines() { return m_lines; }
+	/// @return multiplication factor.
+	float m_factor = 1.0f;
 
 private:
 	size_t m_lines = 1;
@@ -118,8 +151,31 @@ private:
 	Texture m_texture;
 };
 
+class SvgTxtThemeBase : public std::enable_shared_from_this<SvgTxtThemeBase> {
+	public:
+	friend class OpenGLText;
+	float m_lineHeight;
+	protected:
+	std::string m_cache_text;
+	TextStyle m_text;
+	float m_factor;
+	Dimensions m_dimensions;
+	WrappingStyle m_wrapping;
+	std::unique_ptr<PangoContext, decltype(&g_object_unref)> m_pangoContext;
+	std::unique_ptr<PangoLayout, decltype(&g_object_unref)> m_pangoLayout;
+	virtual size_t totalLines() = 0;
+	bool m_multiLine() { return totalLines() > 1; }
+ 	virtual Dimensions& dimensions() = 0;
+ 	void applyTheme();
+ 	public:
+	/// constructor
+	SvgTxtThemeBase(float factor = 1.0f, WrappingStyle _wrapping = WrappingStyle().menuScreenText());
+	/// destructor
+	virtual ~SvgTxtThemeBase() {};
+};
+
 /// themed svg texts (simple)
-class SvgTxtThemeSimple {
+class SvgTxtThemeSimple : public SvgTxtThemeBase {
 public:
 	/// constructor
 	SvgTxtThemeSimple(fs::path const& themeFile, float factor = 1.0f, WrappingStyle _wrapping = WrappingStyle().menuScreenText());
@@ -128,21 +184,21 @@ public:
 	/// draws texture
 	void draw();
 	/// gets dimensions
-	Dimensions& dimensions() { return m_opengl_text->dimensions(); }
+	Dimensions& dimensions() { 
+		if (m_opengl_text) return m_opengl_text->dimensions();
+		return m_dimensions;
+		}
 	/// Returns the number of lines in a contained OpenGLText.
 	size_t totalLines() { return m_opengl_text->lines(); }
 
 private:
 	std::unique_ptr<OpenGLText> m_opengl_text;
-	std::string m_cache_text;
-	TextStyle m_text;
-	float m_factor;
-	WrappingStyle m_wrapping;
 };
 
 /// themed svg texts
-class SvgTxtTheme {
+class SvgTxtTheme : public SvgTxtThemeBase{
 public:
+	friend class OpenGLText;
 	/// enum declaration Gravity:
 	/** <pre>
 	 * +----+---+----+
@@ -154,12 +210,12 @@ public:
 	 * +----+---+----+ (and ASIS)
 	 *
 	 * Coord:
-	 * (x0,y0)        (x1,y0)
+	 * (x1,y1)        (x2,y1)
 	 *    +--------------+
 	 *    |              |
 	 *    |              |
 	 *    +--------------+
-	 * (x0,y1)        (x1,y1)
+	 * (x1,y2)        (x2,y2)
 	 *
 	 * gravity will affect how fit-inside/fit-outside will work
 	 * fitting will always keep aspect ratio
@@ -169,15 +225,15 @@ public:
 	 * force-fit-outside: will always stretch to fill both axis
 	 * gravity does not mean position, it is only an anchor
 	 * Fixed points:
-	 *   NW: (x0,y0)
-	 *   N:  ((x0+x1)/2,y0)
-	 *   NE: (x1,y0)
-	 *   W:  (x0,(y0+y1)/2)
-	 *   C:  ((x0+x1)/2,(y0+y1)/2)
-	 *   E:  (x1,(y0+y1)/2)
-	 *   SW: (x0,y1)
-	 *   S:  ((x0+x1)/2,y1)
-	 *   SE: (x1,y1)</pre>
+	 *   NW: (x1,y1)
+	 *   N:  ((x1+x2)/2,y1)
+	 *   NE: (x2,y1)
+	 *   W:  (x1,(y1+y2)/2)
+	 *   C:  ((x1+x2)/2,(y1+y2)/2)
+	 *   E:  (x2,(y1+y2)/2)
+	 *   SW: (x1,y2)
+	 *   S:  ((x1+x2)/2,y2)
+	 *   SE: (x2,y2)</pre>
 	 */
 	/// TODO anchors
 	enum Gravity {NW,N,NE,W,C,E,SW,S,SE};
@@ -186,13 +242,18 @@ public:
 	/// vertical align
 	enum VAlign {V_ASIS, TOP, MIDDLE, BOTTOM};
 	/// dimensions, what else
-	Dimensions dimensions;
+	Dimensions& dimensions() { return m_dimensions; }
 	/// constructor
 	SvgTxtTheme(fs::path const& themeFile, float factor = 1.0f, WrappingStyle _wrapping = WrappingStyle().menuScreenText());
+	/// layout text
+	void layout(std::string const& _text);
+	void layout(std::string const& _text, float factor);
+	void layout(std::vector<TZoomText> const& _text, bool padSyllables = false);
 	/// draws text with alpha
-	void draw(std::vector<TZoomText>& _text, bool padSyllables = false);
-	/// draw text with alpha
-	void draw(std::string _text);
+	void draw(std::string const& text, bool padSyllables = false);
+	void draw(bool padSyllables = false);
+	/// render text with alpha
+// 	void render();
 	/// sets highlight
 	void setHighlight(fs::path const& themeFile);
 	/// width
@@ -203,20 +264,17 @@ public:
 	void setAlign(Align align) { m_align = align; }
 	/// Returns the maximum number of lines in a contained OpenGLText.
 	size_t totalLines();
+	float m_lineSpacing() { return m_text.linespacing; }
 	
 private:
-	std::vector<std::unique_ptr<OpenGLText>> m_opengl_text;
 	Align m_align;
+	std::vector<std::unique_ptr<OpenGLText>> m_opengl_text;
 	float m_x;
 	float m_y;
 	float m_width;
 	float m_height;
-	float m_factor;
 	float m_texture_width;
 	float m_texture_height;
-	std::string m_cache_text;
-	TextStyle m_text;
 	TextStyle m_text_highlight;
-	WrappingStyle m_wrapping;
 };
 

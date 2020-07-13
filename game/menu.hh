@@ -11,8 +11,8 @@ class Texture;
 class MenuOption;
 class Menu;
 
-typedef std::vector<MenuOption> MenuOptions;
-typedef std::vector<MenuOptions*> SubmenuStack;
+typedef std::vector<std::unique_ptr<MenuOption>> MenuOptions;
+typedef std::vector<std::shared_ptr<MenuOptions>> SubmenuStack;
 typedef std::function<void ()> MenuOptionCallback;
 typedef std::shared_ptr<Texture> MenuImage;
 
@@ -34,10 +34,13 @@ public:
 		if (!virtOptName.empty()) { virtualName = virtOptName; }
 		return *this;
 		}
+	~MenuOption() {
+// 		std::clog << "menuoption/debug: menuoption with name: " << name << ", running destructor. is options a valid pointer? address:" << std::addressof(options) << std::endl;
+	}
 	/// Make the option set a given value for ConfigItem and close the menu.
 	MenuOption& setter(ConfigItem& val, ConfigItem newval) { type = SET_AND_CLOSE; value = &val; newValue = newval; return *this; }
 	/// Make the option open a submenu
-	MenuOption& submenu(MenuOptions opts) { type = OPEN_SUBMENU; options = opts; return *this; }
+	MenuOption& submenu(MenuOptions opts) { type = OPEN_SUBMENU; options = std::make_shared<MenuOptions>(std::move(opts)); return *this; }
 	/// Make the option activate a screeen
 	MenuOption& screen(std::string const& scrn) { type = ACTIVATE_SCREEN; newValue = scrn; return *this; }
 	/// Make the option call a callback
@@ -46,6 +49,8 @@ public:
 	MenuOption& setDynamicName(std::string& nm) { namePtr = &nm; return *this; }
 	/// Sets comment to follow a reference
 	MenuOption& setDynamicComment(std::string& comm) { commentPtr = &comm; return *this; }
+	/// Position of option on screen, in lines.
+	mutable float m_linePos;
 	/// Return name
 	std::string getName() const;
 	/// Return virtual name (for options living only inside the screen)
@@ -56,7 +61,7 @@ public:
 	bool isActive() const;
 	ConfigItem* value;  ///< Setting to be adjusted
 	ConfigItem newValue;  ///< Value to be set or screen name
-	MenuOptions options;  ///< Submenu
+	std::shared_ptr<MenuOptions> options;  ///< Submenu
 	MenuOptionCallback callback;  ///< Callback function
 	MenuImage image;  ///< Image to use with option
 private:
@@ -67,14 +72,17 @@ private:
 	std::string* commentPtr; ///< Optional pointer to dynamically changing comment
 };
 
-
+class ScreenIntro;
 /// Menu for selecting difficulty etc.
 class Menu {
 public:
+	friend class ScreenIntro;
 	/// constructor
 	Menu();
 	/// add a menu option
-	void add(MenuOption opt);
+// 	void add(MenuOption& opt);
+	/// add a menu option
+	void add(std::unique_ptr<MenuOption> opt);
 	/// move the selection
 	void move(int dir = 1);
 	/// set selection
@@ -93,20 +101,18 @@ public:
 	void close() { m_open = false; }
 	void toggle() { m_open = !m_open; }
 	void moveToLast() { selection_stack.back() = menu_stack.back()->size() - 1; }
-
 	size_t curIndex() { return selection_stack.back(); }
-	MenuOption& current() { return menu_stack.back()->at(selection_stack.back()); }
-	MenuOption& back() { return root_options.back(); }
+	MenuOption& current() { return *(menu_stack.back())->at(selection_stack.back()); }
+	MenuOption& back() { return *(root_options->back()); }
 	const MenuOptions::const_iterator begin() const { return menu_stack.back()->begin(); }
 	const MenuOptions::const_iterator end() const { return menu_stack.back()->end(); }
-	const MenuOptions getOptions() const { return *menu_stack.back(); }
+	const MenuOptions& getOptions() const { return *menu_stack.back(); }
 
 	Dimensions dimensions;
 
 private:
-	MenuOptions root_options;
+	bool m_open;
+	std::shared_ptr<MenuOptions> root_options;
 	SubmenuStack menu_stack;
 	std::vector<size_t> selection_stack;
-
-	bool m_open;
 };

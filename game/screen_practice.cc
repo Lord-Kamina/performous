@@ -107,5 +107,5 @@ void ScreenPractice::draw_analyzers() {
 		}
 	}
 	// Display note and frequency
-	if (textFreq > 0.0) theme->note_txt.draw(scale.setFreq(textFreq).getStr());
+	if (textFreq > 0.0) theme->note_txt->draw(scale.setFreq(textFreq).getStr());
 }

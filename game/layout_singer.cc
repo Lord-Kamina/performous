@@ -12,10 +12,10 @@ LayoutSinger::LayoutSinger(VocalTrack& vocal, Database& database, std::shared_pt
   m_vocal(vocal), m_noteGraph(vocal),m_lyricit(vocal.notes.begin()), m_lyrics(), m_database(database), m_theme(theme), m_hideLyrics() {
 	for (unsigned short i = 0; i < 4; ++i) {
 		m_score_text[i] =
-		  std::make_unique<SvgTxtThemeSimple>(findFile("sing_score_text.svg"),
+		  std::make_shared<SvgTxtThemeSimple>(findFile("sing_score_text.svg"),
 		  config["graphic/text_lod"].f(), WrappingStyle().lyrics());
 		m_line_rank_text[i] =
-		  std::make_unique<SvgTxtThemeSimple>(findFile("sing_score_text.svg"),
+		  std::make_shared<SvgTxtThemeSimple>(findFile("sing_score_text.svg"),
 		  config["graphic/text_lod"].f(), WrappingStyle().lyrics());
 	}
 	m_player_icon = std::make_unique<Texture>(findFile("sing_pbox.svg"));

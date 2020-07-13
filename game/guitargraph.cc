@@ -127,8 +127,8 @@ GuitarGraph::GuitarGraph(Audio& audio, Song const& song, input::DevicePtr dev, i
 	m_fretObj.load(findFile("fret.obj"));
 	m_tappableObj.load(findFile("fret_tap.obj"));
 	// Score calculator (TODO a better one)
-	m_scoreText = std::make_unique<SvgTxtThemeSimple>(findFile("sing_score_text.svg"), config["graphic/text_lod"].f(), WrappingStyle().lyrics());
-	m_streakText = std::make_unique<SvgTxtThemeSimple>(findFile("sing_score_text.svg"), config["graphic/text_lod"].f(), WrappingStyle().lyrics());
+	m_scoreText = std::make_shared<SvgTxtThemeSimple>(findFile("sing_score_text.svg"), config["graphic/text_lod"].f(), WrappingStyle().lyrics());
+	m_streakText = std::make_shared<SvgTxtThemeSimple>(findFile("sing_score_text.svg"), config["graphic/text_lod"].f(), WrappingStyle().lyrics());
 	for (size_t i = 0; i < max_panels; ++i) {
 		m_pressed_anim[i].setRate(5.0);
 		m_holds[i] = 0;
@@ -159,13 +159,17 @@ void GuitarGraph::setupJoinMenuDifficulty() {
 	}
 	m_selectedDifficulty = ConfigItem(ol); // Create a ConfigItem from the option list
 	m_selectedDifficulty.select(cur); // Set the selection to current level
-	m_menu.add(MenuOption("", _("Select difficulty")).changer(m_selectedDifficulty)); // MenuOption that cycles the options
+	auto _selectDifficulty = std::make_unique<MenuOption>("", _("Select difficulty"));
+	_selectDifficulty->changer(m_selectedDifficulty);
+	m_menu.add(std::move(_selectDifficulty)); // MenuOption that cycles the options
 	m_menu.back().setDynamicName(m_difficultyOpt); // Set the title to be dynamic
 }
 
 void GuitarGraph::setupJoinMenuDrums() {
 	setupJoinMenuDifficulty();
-	m_menu.add(MenuOption(_("Lefty-mode"), "").changer(m_leftymode));
+	auto _leftyMode = std::make_unique<MenuOption>(_("Lefty-mode"), "");
+	_leftyMode->changer(m_leftymode);
+	m_menu.add(std::move(_leftyMode));
 	m_menu.back().setDynamicComment(m_leftyOpt);
 }
 
@@ -179,10 +183,14 @@ void GuitarGraph::setupJoinMenuGuitar() {
 	}
 	m_selectedTrack = ConfigItem(ol); // Create a ConfigItem from the option list
 	m_selectedTrack.select(cur); // Set the selection to current track
-	m_menu.add(MenuOption("", _("Select track")).changer(m_selectedTrack)); // MenuOption that cycles the options
+	auto _selectTrack = std::make_unique<MenuOption>("", _("Select track"));
+	_selectTrack->changer(m_selectedTrack);
+	m_menu.add(std::move(_selectTrack)); // MenuOption that cycles the options
 	m_menu.back().setDynamicName(m_trackOpt); // Set the title to be dynamic
 	setupJoinMenuDifficulty();
-	m_menu.add(MenuOption(_("Lefty-mode"), "").changer(m_leftymode));
+	auto _leftyMode = std::make_unique<MenuOption>(_("Lefty-mode"), "");
+	_leftyMode->changer(m_leftymode);
+	m_menu.add(std::move(_leftyMode));
 	m_menu.back().setDynamicComment(m_leftyOpt);
 }
 
@@ -190,13 +198,16 @@ void GuitarGraph::setupJoinMenu() {
 	m_menu.clear();
 	updateJoinMenu();
 	// Populate root menu
-	m_menu.add(MenuOption(_("Ready!"), _("Start performing!")));
+	auto _ready = std::make_unique<MenuOption>(_("Ready!"), _("Start performing!"));
+	m_menu.add(std::move(_ready));
 	if(m_drums) {
 		setupJoinMenuDrums();
 	} else {
 		setupJoinMenuGuitar();
 	}
-	m_menu.add(MenuOption(_("Quit"), _("Exit to song browser")).screen("Songs"));
+	auto _quit = std::make_unique<MenuOption>(_("Quit"), _("Exit to song browser"));
+	_quit->screen("Songs");
+	m_menu.add(std::move(_quit));
 }
 
 void GuitarGraph::updateJoinMenu() {
@@ -390,7 +401,7 @@ void GuitarGraph::engine() {
 		// Solo just ended?
 		} else if (m_soloTotal > 0) {
 			m_popups.push_back(Popup(std::to_string(unsigned(m_soloScore / m_soloTotal * 100)) + " %",
-			  Color(0.0f, 0.8f, 0.0f), 1.0f, m_popupText.get()));
+			  Color(0.0f, 0.8f, 0.0f), 1.0f, m_popupText));
 			m_soloScore = 0;
 			m_soloTotal = 0;
 		}
@@ -447,7 +458,7 @@ void GuitarGraph::engine() {
 		m_bigStreak = getNextBigStreak(m_bigStreak);
 		m_starmeter += streakStarBonus;
 		m_popups.push_back(Popup(std::to_string(unsigned(m_bigStreak)) + "\n" + _("Streak!"),
-		  Color(1.0f, 0.0f, 0.0f), 1.0f, m_popupText.get()));
+		  Color(1.0f, 0.0f, 0.0f), 1.0f, m_popupText));
 	}
 	// During GodMode, correctness is full, no matter what
 	if (m_starpower.get() > 0.01) m_correctness.setTarget(1.0, true);
@@ -459,7 +470,7 @@ void GuitarGraph::activateStarpower() {
 		m_starmeter = 0;
 		m_starpower.setValue(1.0);
 		m_popups.push_back(Popup(_("God Mode\nActivated!"),
-		  Color(0.3f, 0.0f, 1.0f), 0.666f, m_popupText.get(), _("Mistakes ignored!"), &m_text));
+		  Color(0.3f, 0.0f, 1.0f), 0.666f, m_popupText, _("Mistakes ignored!"), m_text));
 	}
 }
 
@@ -1107,12 +1118,16 @@ void GuitarGraph::drawInfo(double time) {
 	{
 		ColorTrans c(Color::alpha(static_cast<float>(std::abs(std::fmod(time, 1.0) - 0.5) * 2.0)));
 		if (canActivateStarpower()) {
-			m_text.dimensions.screenBottom(-0.02f).middle(-0.12f);
-			if (!m_drums) m_text.draw(_("God Mode Ready!"));
-			else if (m_dfIt != m_drumfills.end() && time >= m_dfIt->begin && time <= m_dfIt->end) m_text.draw(_("Drum Fill!"));
+			m_text->dimensions().screenBottom(-0.02f).middle(-0.12f);
+			if (!m_drums) {
+				m_text->layout(_("God Mode Ready!"));
+				m_text->draw();
+				}
+			else if (m_dfIt != m_drumfills.end() && time >= m_dfIt->begin && time <= m_dfIt->end) m_text->draw(_("Drum Fill!"));
 		} else if (m_solo) {
-			m_text.dimensions.screenBottom(-0.02f).middle(-0.03f);
-			m_text.draw(_("Solo!"));
+			m_text->dimensions().screenBottom(-0.02f).middle(-0.03f);
+			m_text->layout(_("Solo!"));
+			m_text->draw();
 		}
 	}
 	drawPopups();

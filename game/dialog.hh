@@ -17,7 +17,7 @@ class Dialog {
   private:
 	std::string m_text;
 	Texture m_dialog;
-	SvgTxtTheme m_svgText;
+	std::shared_ptr<SvgTxtTheme> m_svgText;
 	AnimValue m_animationVal;
 	enum state {SLIDEIN, IDLE, SLIDEOUT};
 	state m_state;

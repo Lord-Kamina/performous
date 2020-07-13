@@ -120,8 +120,8 @@ void ScreenAudioDevices::draw() {
 		m_theme->device_bg.dimensions.center(y);
 		m_theme->device_bg.draw();
 		ColorTrans c(Color::alpha(alpha));
-		m_theme->device.dimensions.middle(-xstep*0.5f).center(y);
-		m_theme->device.draw(i < m_devs.size() ? m_devs[i].desc() : _("- Unassigned -"));
+		m_theme->device->dimensions().middle(-xstep*0.5f).center(y);
+		m_theme->device->draw(i < m_devs.size() ? m_devs[i].desc() : _("- Unassigned -"));
 	}
 	// Icons
 	for (size_t i = 0; i < m_channels.size(); ++i) {
@@ -141,13 +141,13 @@ void ScreenAudioDevices::draw() {
 	// Key help
 	m_theme->comment_bg.dimensions.stretch(1.0f, 0.025f).middle().screenBottom(-0.054f);
 	m_theme->comment_bg.draw();
-	m_theme->comment.dimensions.left(-0.48f).screenBottom(-0.067f);
-	m_theme->comment.draw(_("Use arrow keys to configure. Hit Enter/Start to save and test or Esc/Select to cancel. Ctrl + R to reset defaults"));
+	m_theme->comment->dimensions().left(-0.48f).screenBottom(-0.067f);
+	m_theme->comment->draw(_("Use arrow keys to configure. Hit Enter/Start to save and test or Esc/Select to cancel. Ctrl + R to reset defaults"));
 	// Additional info
 	m_theme->comment_bg.dimensions.middle().screenBottom(-0.01f);
 	m_theme->comment_bg.draw();
-	m_theme->comment.dimensions.left(-0.48f).screenBottom(-0.023f);
-	m_theme->comment.draw(_("For advanced device configuration, use command line parameter --audio (use --audiohelp for details)."));
+	m_theme->comment->dimensions().left(-0.48f).screenBottom(-0.023f);
+	m_theme->comment->draw(_("For advanced device configuration, use command line parameter --audio (use --audiohelp for details)."));
 }
 
 void ScreenAudioDevices::load() {

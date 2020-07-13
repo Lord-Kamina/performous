@@ -12,7 +12,7 @@ class AnimValue {
 	AnimValue(double value = 0.0, double rate = 1.0): m_value(value), m_target(value), m_rate(rate), m_time(Clock::now()) {}
 	/// move animation forward by diff
 	void move(double diff) { m_value += diff; }
-	/// gets animition target
+	/// gets animation target
 	double getTarget() const { return m_target; }
 	/// sets animation target (end point)
 	void setTarget(double target, bool step = false) { m_target = target; if (step) m_value = target; }

@@ -179,8 +179,8 @@ void ScreenPlayers::draw() {
 	}
 
 	// Draw song and order texts
-	theme->song.draw(oss_song.str());
-	theme->order.draw(oss_order.str());
+	theme->song->draw(oss_song.str());
+	theme->order->draw(oss_order.str());
 
 	// Schedule playback change if the chosen song has changed
 	if (music != m_playReq) { m_playReq = music; m_playTimer.setValue(0.0); }

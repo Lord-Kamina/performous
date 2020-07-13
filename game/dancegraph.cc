@@ -103,7 +103,8 @@ void DanceGraph::setupJoinMenu() {
 	m_menu.clear();
 	updateJoinMenu();
 	// Populate root menu
-	m_menu.add(MenuOption(_("Ready!"), _("Start performing!")));
+	auto _ready = std::make_unique<MenuOption>(_("Ready!"), _("Start performing!"));
+	m_menu.add(std::move(_ready));
 	{ // Create track selector
 		ConfigItem::OptionList ol;
 		int i = 0, cur = 0;
@@ -114,7 +115,9 @@ void DanceGraph::setupJoinMenu() {
 		}
 		m_selectedTrack = ConfigItem(ol); // Create a ConfigItem from the option list
 		m_selectedTrack.select(cur); // Set the selection to current level
-		m_menu.add(MenuOption("", _("Select track")).changer(m_selectedTrack)); // MenuOption that cycles the options
+		auto _selectTrack = std::make_unique<MenuOption>("", _("Select track"));
+		_selectTrack->changer(m_selectedTrack);
+		m_menu.add(std::move(_selectTrack)); // MenuOption that cycles the options
 		m_menu.back().setDynamicName(m_trackOpt); // Set the title to be dynamic
 	}
 	{ // Create difficulty opt
@@ -130,10 +133,14 @@ void DanceGraph::setupJoinMenu() {
 		}
 		m_selectedDifficulty = ConfigItem(ol); // Create a ConfigItem from the option list
 		m_selectedDifficulty.select(cur); // Set the selection to current level
-		m_menu.add(MenuOption("", _("Select difficulty")).changer(m_selectedDifficulty)); // MenuOption that cycles the options
+		auto _selectDifficulty = std::make_unique<MenuOption>("", _("Select difficulty"));
+		_selectDifficulty->changer(m_selectedDifficulty);
+		m_menu.add(std::move(_selectDifficulty)); // MenuOption that cycles the options
 		m_menu.back().setDynamicName(m_difficultyOpt); // Set the title to be dynamic
 	}
-	m_menu.add(MenuOption(_("Quit"), _("Exit to song browser")).screen("Songs"));
+	auto _quit = std::make_unique<MenuOption>(_("Quit"), _("Exit to song browser"));
+	_quit->screen("Songs");
+	m_menu.add(std::move(_quit));
 }
 
 void DanceGraph::updateJoinMenu() {
@@ -244,7 +251,7 @@ void DanceGraph::engine() {
 		if (time < stop.first + stop.second) {  // Inside stop
 			time = stop.first;
 			if (!m_insideStop) {
-				m_popups.push_back(Popup(_("STOP!"),  Color(1.0f, 0.8f, 0.0f), 2.0f, m_popupText.get()));
+				m_popups.push_back(Popup(_("STOP!"),  Color(1.0f, 0.8f, 0.0f), 2.0f, m_popupText));
 				m_insideStop = true;
 			}
 			outsideStop = false;
@@ -318,7 +325,7 @@ void DanceGraph::engine() {
 	if (m_streak >= getNextBigStreak(m_bigStreak)) {
 		m_bigStreak = getNextBigStreak(m_bigStreak);
 		m_popups.push_back(Popup(std::to_string(unsigned(m_bigStreak)) + "\n" + _("Streak!"),
-		  Color(1.0f, 0.0f, 0.0f), 1.0f, m_popupText.get()));
+		  Color(1.0f, 0.0f, 0.0f), 1.0f, m_popupText));
 	}
 }
 
@@ -536,10 +543,10 @@ void DanceGraph::drawNote(DanceNote& note, double time) {
 void DanceGraph::drawInfo(double /*time*/, Dimensions dimensions) {
 	if (!menuOpen()) {
 		// Draw scores
-		m_text.dimensions.screenBottom(-0.35f).middle(0.32f * dimensions.w());
-		m_text.draw(std::to_string(unsigned(getScore())));
-		m_text.dimensions.screenBottom(-0.32f).middle(0.32f * dimensions.w());
-		m_text.draw(std::to_string(unsigned(m_streak)) + "/"
+		m_text->dimensions().screenBottom(-0.35f).middle(0.32f * dimensions.w());
+		m_text->draw(std::to_string(unsigned(getScore())));
+		m_text->dimensions().screenBottom(-0.32f).middle(0.32f * dimensions.w());
+		m_text->draw(std::to_string(unsigned(m_streak)) + "/"
 		  + std::to_string(unsigned(m_longestStreak)));
 	}
 	drawPopups();

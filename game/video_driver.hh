@@ -9,7 +9,8 @@
 float screenW();
 float screenH();
 const float targetWidth = 1366.0f; // One of the most common desktop resolutions in use today.
-static inline float virtH() { return float(screenH()) / screenW(); }
+const float targetHeight = 768.0f; // One of the most common desktop resolutions in use today.
+static inline float virtH() { return screenH() / screenW(); }
 
 struct SDL_Surface;
 struct SDL_Window;
