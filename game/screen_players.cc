@@ -161,7 +161,7 @@ void ScreenPlayers::draw() {
 			if (baseidx + i < 0 || baseidx + i >= int(ss)) continue;
 			
 			Texture& s = !player_display.path.empty() ? *loadTextureFromMap(player_display.path) : *m_emptyCover;
-			float diff = (i == 0 ? (0.5 - fabs(shift)) * 0.07 : 0.0);
+			float diff = (i == 0 ? static_cast<float>((0.5 - fabs(shift)) * 0.07) : 0.0f);
 			float y = 0.27f + 0.5f * diff;
 			// Draw the cover
 			s.dimensions.middle(-0.2f + 0.17f * (i - shift)).bottom(y - 0.2f * diff).fitInside(0.14f + diff, 0.14f + diff); s.draw();

@@ -11,7 +11,7 @@ Dialog::Dialog(std::string const& text) :
 	}
 
 void Dialog::draw() {
-	double verticaloffset = 1.0;
+	float verticaloffset = 1.0;
 	switch(m_state) {
 	case State::IDLE:
 		verticaloffset = 0.0;
