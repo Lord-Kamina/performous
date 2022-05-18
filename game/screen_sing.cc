@@ -43,20 +43,20 @@ void ScreenSing::enter() {
 	m_DuetTimeout.setValue(10);
 	Game* gm = Game::getSingletonPtr();
 	// Initialize webcam
-	gm->loading(_("Initializing webcam..."), 0.1f);
+	gm->loading(_("Initializing webcam..."), 0.1);
 	if (config["graphic/webcam"].b() && Webcam::enabled()) {
 		try {
 			m_cam = std::make_unique<Webcam>(config["graphic/webcamid"].i());
 		} catch (std::exception& e) { std::cout << e.what() << std::endl; };
 	}
 	// Load video
-	gm->loading(_("Loading video..."), 0.2f);
+	gm->loading(_("Loading video..."), 0.2);
 	if (!m_song->video.empty() && config["graphic/video"].b()) {
 		m_video = std::make_unique<Video>(m_song->video, m_song->videoGap);
 	}
 	reloadGL();
 	// Load song notes
-	gm->loading(_("Loading song..."), 0.4f);
+	gm->loading(_("Loading song..."), 0.4);
 	try { m_song->loadNotes(false /* don't ignore errors */); }
 	catch (SongParserException& e) {
 		std::clog << e;
@@ -68,7 +68,7 @@ void ScreenSing::enter() {
 	double setup_delay = (!m_song->hasControllers() ? -1.0 : -5.0);
 	m_audio.pause();
 	m_audio.playMusic(m_song->music, false, 0.0, setup_delay);
-	gm->loading(_("Loading menu..."), 0.7f);
+	gm->loading(_("Loading menu..."), 0.7);
 	{
 		m_duet = ConfigItem(0);
 		for (size_t player = 0; player < players(); ++player) {
@@ -78,7 +78,7 @@ void ScreenSing::enter() {
 		prepareVoicesMenu();
 	}
 	gm->showLogo(false);
-	gm->loading(_("Loading complete"), 1.0f);
+	gm->loading(_("Loading complete"), 1.0);
 }
 
 void ScreenSing::prepareVoicesMenu(size_t moveSelectionTo) {

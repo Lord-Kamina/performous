@@ -52,9 +52,9 @@ namespace {
 			float ymid = 0.5f * (ybeg + yend);
 			float crop = 0.25f * w / h_x;
 			va.texCoord(crop, 0.0f).vertex(x + 0.5f * w, ymid);
-			va.texCoord(crop, 1.0f).vertex(x + 0.5f * w, ymid + h_y);
+			va.texCoord(crop, 1.0f).vertex(x + 0.5 * w, ymid + h_y);
 			va.texCoord(1.0f - crop, 0.0f).vertex(x + 0.5f * w, ymid);
-			va.texCoord(1.0f - crop, 1.0f).vertex(x + 0.5f * w, ymid + h_y);
+			va.texCoord(1.0f - crop, 1.0f).vertex(x + 0.5 * w, ymid + h_y);
 		}
 		// The rear cap ends
 		va.texCoord(1.0f, 0.0f).vertex(x + w, yend);

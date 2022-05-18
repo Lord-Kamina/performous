@@ -15,7 +15,7 @@ InstrumentGraph::InstrumentGraph(Audio& audio, Song const& song, input::DevicePt
   m_audio(audio), m_song(song),
   m_stream(),
   m_dev(dev),
-  m_cx(0.0, 0.2), m_width(0.5, 0.4),
+  m_cx(0.0f, 0.2f), m_width(0.5f, 0.4f),
   m_menu(),
   m_button(findFile("button.svg")),
   m_arrow_up(findFile("arrow_button_up.svg")),
@@ -92,7 +92,7 @@ void InstrumentGraph::drawMenu() {
 	m_arrow_right.dimensions.stretch(0.05f, 0.05f);
 	const auto cur = &m_menu.current();
 	float w = m_menu.dimensions.w();
-	const float s = static_cast<float>(std::min(m_width.get(), 0.5) / w);
+	const float s = std::min(m_width.get(), 0.5f) / w;
 	Transform trans(glmath::scale(s));  // Fit better menu on screen
 	// We need to multiply offset by inverse scale factor to keep it always constant
 	// All these vars are ultimately affected by the scaling matrix

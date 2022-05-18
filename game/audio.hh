@@ -136,7 +136,7 @@ public:
 	/** Do a pitch shift - used for guitar whammy bar */
 	void streamBend(std::string track, double pitchFactor);
 	/** Get sample rate */
-	static float getSR() { return 48000.0f; }
+	static double getSR() { return 48000.0; }
 	static unsigned aubio_hop_size;
 	static unsigned aubio_win_size;
 	static std::unique_ptr<aubio_tempo_t, void(*)(aubio_tempo_t*)> aubioTempo;
@@ -145,8 +145,8 @@ public:
 class Music {
 struct Track {
 	AudioBuffer audioBuffer;
-	double fadeLevel = 1.0;
-	double pitchFactor = 0.0f;
+	float fadeLevel = 1.0f;
+	float pitchFactor = 0.0f;
 	template <typename... Args> Track(Args&&... args): audioBuffer(std::forward<Args>(args)...) {}
 };	
 	friend class ScreenSongs;

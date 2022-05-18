@@ -16,7 +16,7 @@ ScreenPlaylist::ScreenPlaylist(std::string const& name,Audio& audio, Songs& song
 void ScreenPlaylist::enter() {
 	Game* gm = Game::getSingletonPtr();
 	// Initialize webcam
-	gm->loading(_("Initializing webcam..."), 0.1f);
+	gm->loading(_("Initializing webcam..."), 0.1);
 	if (config["graphic/webcam"].b() && Webcam::enabled()) {
 		try {
 			m_cam = std::make_unique<Webcam>(config["graphic/webcamid"].i());
@@ -35,7 +35,7 @@ void ScreenPlaylist::enter() {
 	}
 	m_nextTimer.setValue(timervalue);
 	overlay_menu.close();
-	gm->loading(_("Loading song timestamps..."), 0.2f);
+	gm->loading(_("Loading song timestamps..."), 0.2);
 	createSongListMenu();
 	songlist_menu.open();
 	reloadGL();
