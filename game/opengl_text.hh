@@ -14,9 +14,9 @@ struct TZoomText {
 	/// text
 	std::string string;
 	/// zoomfactor
-	float factor;
+	double factor;
 	/// constructor
-	TZoomText(std::string const& str = std::string()): string(str), factor(1.0f) {}
+	TZoomText(std::string const& str = std::string()): string(str), factor(1.0) {}
 };
 
 /// Special theme for creating opengl themed surfaces
@@ -38,9 +38,9 @@ struct TextStyle {
 	};
 	Color fill_col; ///< fill color
 	Color stroke_col; ///< stroke color
-	float stroke_width; ///< stroke thickness
-	float stroke_miterlimit; ///< stroke miter limit
-	float fontsize; ///< fontsize
+	double stroke_width; ///< stroke thickness
+	double stroke_miterlimit; ///< stroke miter limit
+	double fontsize; ///< fontsize
 	std::string fontfamily; ///< fontfamily
 	std::string fontstyle; ///< fontstyle
 	std::string fontweight; ///< fontweight
@@ -48,7 +48,7 @@ struct TextStyle {
 	std::string	stroke_linejoin; ///< stroke line-join type
 	std::string	stroke_linecap; ///< stroke line-join type
 	std::string text; ///< text
-	TextStyle(): stroke_width(), stroke_miterlimit(1.0f), fontsize() {}
+	TextStyle(): stroke_width(), stroke_miterlimit(1.0), fontsize() {}
 };
 
 /// this class will enable to create a texture from a themed text structure
@@ -59,21 +59,21 @@ struct TextStyle {
 class OpenGLText {
 public:
 	/// constructor
-	OpenGLText(TextStyle &_text, float m);
+	OpenGLText(TextStyle &_text, double m);
 	/// draws area
 	void draw(Dimensions &_dim, TexCoords &_tex);
 	/// draws full texture
 	void draw();
 	/// @return x
-	float x() const { return m_x; }
+	double x() const { return m_x; }
 	/// @return y
-	float y() const { return m_y; }
+	double y() const { return m_y; }
 	/// @returns dimension of texture
 	Dimensions& dimensions() { return m_texture.dimensions; }
 
 private:
-	float m_x;
-	float m_y;
+	double m_x;
+	double m_y;
 	Texture m_texture;
 };
 
@@ -81,7 +81,7 @@ private:
 class SvgTxtThemeSimple {
 public:
 	/// constructor
-	SvgTxtThemeSimple(fs::path const& themeFile, float factor = 1.0f);
+	SvgTxtThemeSimple(fs::path const& themeFile, double factor = 1.0);
 	/// renders text
 	void render(std::string _text);
 	/// draws texture
@@ -93,7 +93,7 @@ private:
 	std::unique_ptr<OpenGLText> m_opengl_text;
 	std::string m_cache_text;
 	TextStyle m_text;
-	float m_factor;
+	double m_factor;
 };
 
 /// themed svg texts
@@ -141,7 +141,7 @@ public:
 	/// dimensions, what else
 	Dimensions dimensions;
 	/// constructor
-	SvgTxtTheme(fs::path const& themeFile, float factor = 1.0f);
+	SvgTxtTheme(fs::path const& themeFile, double factor = 1.0);
 	/// draws text with alpha
 	void draw(std::vector<TZoomText>& _text, bool lyrics = false);
 	/// draw text with alpha
@@ -149,22 +149,22 @@ public:
 	/// sets highlight
 	void setHighlight(fs::path const& themeFile);
 	/// width
-	float w() const { return m_texture_width; }
+	double w() const { return m_texture_width; }
 	/// height
-	float h() const { return m_texture_height; }
+	double h() const { return m_texture_height; }
 	/// set align
 	void setAlign(Align align) { m_align = align; }
 
 private:
 	std::vector<std::unique_ptr<OpenGLText>> m_opengl_text;
 	Align m_align;
-	float m_x;
-	float m_y;
-	float m_width;
-	float m_height;
-	float m_factor;
-	float m_texture_width;
-	float m_texture_height;
+	double m_x;
+	double m_y;
+	double m_width;
+	double m_height;
+	double m_factor;
+	double m_texture_width;
+	double m_texture_height;
 	std::string m_cache_text;
 	TextStyle m_text;
 	TextStyle m_text_highlight;
