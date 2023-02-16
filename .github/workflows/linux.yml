@@ -28,6 +28,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       build_docker_containers: ${{ steps.version.outputs.build_docker_containers }}
+      build_debian_containers: ${{ steps.version.outputs.build_debian_containers }}
+      build_ubuntu_containers: ${{ steps.version.outputs.build_docker_containers }}
+      build_fedora_containers: ${{ steps.version.outputs.build_docker_containers }}
     steps:
       - name: Checkout
         id: checkout
@@ -127,7 +130,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build ${{ matrix.os }} ${{ matrix.version }} Container
-        if: jobs.version.outputs[format('build_{0}_containers', matrix.os)] == 'true' || jobs.version.outputs['build_docker_containers'] == 'true'
+        if: needs.determine_docker_version.outputs[format('build_{0}_containers', matrix.os)] == 'true' || needs.determine_docker_version.outputs['build_docker_containers'] == 'true'
         uses: docker/build-push-action@v3
         with:
           context: docker/
