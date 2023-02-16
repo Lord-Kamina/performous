@@ -127,7 +127,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build ${{ matrix.os }} ${{ matrix.version }} Container
-        if: format('{0} == "true"' || {1} == "true"', format('needs.determine_docker_version.outputs.build_{0}_containers', matrix.os), needs.determine_docker_version.outputs.build_docker_containers)
+        if: ${{ format('{0} == "true" || {1} == "true"', format('needs.determine_docker_version.outputs.build_{0}_containers', matrix.os), needs.determine_docker_version.outputs.build_docker_containers) }}
         uses: docker/build-push-action@v3
         with:
           context: docker/
