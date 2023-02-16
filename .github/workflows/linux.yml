@@ -29,8 +29,8 @@ jobs:
     outputs:
       build_docker_containers: ${{ steps.version.outputs.build_docker_containers }}
       build_debian_containers: ${{ steps.version.outputs.build_debian_containers }}
-      build_ubuntu_containers: ${{ steps.version.outputs.build_docker_containers }}
-      build_fedora_containers: ${{ steps.version.outputs.build_docker_containers }}
+      build_ubuntu_containers: ${{ steps.version.outputs.build_ubuntu_containers }}
+      build_fedora_containers: ${{ steps.version.outputs.build_fedora_containers }}
     steps:
       - name: Checkout
         id: checkout
