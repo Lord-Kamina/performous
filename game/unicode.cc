@@ -55,7 +55,7 @@ std::string UnicodeUtil::getCharset (std::string_view& str) {
 		&is_reliable);
 
 	if (!is_reliable) {
-		std::string_view textSample{str.begin(), str.size() <= 256 ? str.length() : 255}; // Magic number, so sue me.
+		std::string_view textSample{str.data(), str.size() <= 256 ? str.length() : 255}; // Magic number, so sue me.
 		SpdLogger::info(LogSystem::I18N, "Detected encoding={}, for text sample='{}' not reliable.", MimeEncodingName(encoding), textSample); 
 	}
 	return MimeEncodingName(encoding);
