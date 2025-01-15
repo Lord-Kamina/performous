@@ -113,23 +113,33 @@ int Platform::defaultBackEnd() {
 }
 
 #if (BOOST_OS_WINDOWS)
+std::unique_ptr<FILE, decltype(&fclose)> Platform::stdErrStream{nullptr, fclose};
+std::unique_ptr<HANDLE, decltype(&CloseHandle)> Platform::stdOutHandle{nullptr, CloseHandle};
 int Platform::stderr_fd;
 
 void Platform::initWindowsConsole() {
-	if (AttachConsole(ATTACH_PARENT_PROCESS) == 0 || fileno(stdout) == -2 || fileno(stderr) == -2) {
+	if (int res = AttachConsole(ATTACH_PARENT_PROCESS) == 0 && (fileno(stdout) == -2 || fileno(stderr) == -2)) {
 		auto ptr = stdErrStream.get();
 		freopen_s(&ptr, "NUL", "w", stderr);
 	}
 	else {
-		freopen_s((FILE**)stdout, "CONOUT$", "w", stdout);
 		freopen_s((FILE**)stderr, "CONOUT$", "w", stderr);
-		std::ios::sync_with_stdio(true);
-		std::setvbuf(stdout, nullptr, _IONBF, 0);
-		std::setvbuf(stderr, nullptr, _IONBF, 0);
-		std::cout.clear();
-		std::cerr.clear();
-		std::wcout.clear();
-		std::wcerr.clear();
+		freopen_s((FILE**)stdout, "CONOUT$", "w", stdout);
+		HANDLE hStdout = CreateFile(
+			"CONOUT$", GENERIC_READ | GENERIC_WRITE,
+			FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+			OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL
+		);
+		if (hStdout == INVALID_HANDLE_VALUE) {
+			std::fprintf(stderr, "Unable to get a handle to the stdout console. Error=%u", GetLastError());
+		}
+		else {
+			stdOutHandle.reset(&hStdout);
+			SetStdHandle(STD_OUTPUT_HANDLE, *stdOutHandle);
+			std::setvbuf(stdout, nullptr, _IONBF, 0);
+			std::cout.clear();
+			std::wcout.clear();
+		}
 	}
 	stderr_fd = fileno(stderr);
 }
