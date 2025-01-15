@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <exception>
+#include <iostream>
 #include <string>
 
 #if (BOOST_OS_WINDOWS)
@@ -120,8 +121,15 @@ void Platform::initWindowsConsole() {
 		freopen_s(&ptr, "NUL", "w", stderr);
 	}
 	else {
-		freopen_s ((FILE**)stdout, "CONOUT$", "w", stdout);
-		freopen_s ((FILE**)stderr, "CONOUT$", "w", stderr);
+		freopen_s((FILE**)stdout, "CONOUT$", "w", stdout);
+		freopen_s((FILE**)stderr, "CONOUT$", "w", stderr);
+		std::ios::sync_with_stdio(true);
+		std::setvbuf(stdout, nullptr, _IONBF, 0);
+		std::setvbuf(stderr, nullptr, _IONBF, 0);
+		std::cout.clear();
+		std::cerr.clear();
+		std::wcout.clear();
+		std::wcerr.clear();
 	}
 	stderr_fd = fileno(stderr);
 }
